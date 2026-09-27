@@ -49,4 +49,14 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    email_verified: bool
     created_at: datetime
+
+
+class VerifyCode(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    code: str = Field(min_length=6, max_length=6)
+
+
+class SendCodeRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
