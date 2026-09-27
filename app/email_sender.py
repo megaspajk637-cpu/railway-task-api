@@ -1,15 +1,30 @@
+"""Отправка кода подтверждения по email через SMTP (Gmail и др.)."""
+import os
+import smtplib
 import socket
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+FROM_NAME = os.getenv("FROM_NAME", "User Site")
+
 
 def send_verification_code(to_email: str, code: str) -> bool:
     """Возвращает True, если письмо ушло. В dev-режиме печатает код в логи."""
     if not SMTP_USER or not SMTP_PASS:
+        # Локально / без SMTP — просто логируем, чтобы можно было тестировать
         print(f"[DEV] Код для {to_email}: {code}")
         return True
 
     # --- Railway: форсим IPv4, иначе Errno 101 Network is unreachable ---
     _orig_getaddrinfo = socket.getaddrinfo
+
     def _ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
         return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
     socket.getaddrinfo = _ipv4_getaddrinfo
     # --------------------------------------------------------------------
 
@@ -40,5 +55,5 @@ def send_verification_code(to_email: str, code: str) -> bool:
         print(f"[SMTP error] {type(e).__name__}: {e}")
         return False
     finally:
-        # Обязательно вернуть оригинал, чтобы не влиять на другие модули
+        # Обязательно вернуть оригинал
         socket.getaddrinfo = _orig_getaddrinfo
